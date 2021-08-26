@@ -1,10 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 
 import {HttpClient} from "@angular/common/http";
-import {BagFetcherService} from "./bag-fetcher.service";
 import {Cases} from "./model/Cases";
-import {Observable} from "rxjs";
-import {MatTableModule} from '@angular/material/table';
 import {CasesVacc} from "./model/CasesVacc";
 
 
@@ -15,6 +12,10 @@ import {CasesVacc} from "./model/CasesVacc";
 })
 export class AppComponent implements OnInit {
     title = 'covid-info';
+    private contextUrl = 'https://www.covid19.admin.ch/api/data/context';  // URL to web api
+    private context:any;
+
+
     options: any;
     options2: any;
 
@@ -34,47 +35,56 @@ export class AppComponent implements OnInit {
 
 
     ngOnInit(): void {
+       
+        this.http.get(this.contextUrl).subscribe(context => {   
+            this.context  = context;                     
+            this.http.get( this.context.sources.individual.json.daily.cases).subscribe((cases: any) => {              
+              this.cases = cases.filter((cases: { geoRegion: string; }) => cases.geoRegion == "CH").slice(-50);      
+              for (let entry of this.cases) {
+                this.xAxisData.push(entry.datum);
+                this.newCases.push(entry.entries);
+            }
+            console.log("Entries Cases: " + this.cases.length)                  
+            });
+          });
 
-        this.bagFetcherService.getCases()
-            .subscribe(cases => {
-                    this.cases = cases.filter(cases => cases.geoRegion == "CH").slice(-50);
-                    for (let entry of this.cases) {
-                        this.xAxisData.push(entry.datum);
-                        this.newCases.push(entry.entries);
-                    }
-                    console.log("Entries Cases: " + this.cases.length)
-                }
-            );
 
-        this.bagFetcherService.getHospitalized()
-            .subscribe(hospCases => {
-                    this.hospCases = hospCases.filter(hospCases => hospCases.geoRegion == "CH").slice(-50);
-                    for (let entry of this.hospCases) {
-                        this.newHospitalized.push(entry.entries);
-                    }
-                    console.log("Entries Hospitalized: " + this.hospCases.length)
-                }
-            );
 
-        this.bagFetcherService.getVaccinatedHospitalized()
-            .subscribe(vaccinatedHosp => {
-                    this.vaccinatedHosp = vaccinatedHosp.slice(-50);
-                    for (let entry of this.vaccinatedHosp) {
-                        this.newHospitalizedVacc.push(entry.entries);
-                    }
-                    console.log("Entries Vaccinated Hosp: " + this.vaccinatedHosp.length)
+            this.http.get(this.contextUrl).subscribe(context => {   
+                this.context  = context;                         
+                this.http.get( this.context.sources.individual.json.daily.hosp).subscribe((hospCases: any) => {                  
+                  this.hospCases = hospCases.filter((hospCases: { geoRegion: string; }) => hospCases.geoRegion == "CH").slice(-50);      
+                  for (let entry of this.hospCases) {                
+                    this.newHospitalized.push(entry.entries);
                 }
-            );
+                console.log("Entries Hospitalized: " + this.hospCases.length)                  
+                });
+              });
 
-        this.bagFetcherService.getVaccinatedCases()
-            .subscribe(vaccinatedCases => {
-                    this.vaccinatedCases = vaccinatedCases.slice(-50);
-                    for (let entry of this.vaccinatedCases) {
-                        this.newCasesVacc.push(entry.entries);
-                    }
-                    console.log("Entries Vaccinated: " + this.vaccinatedCases.length)
+            // Get Vaccinated Hospitalized
+            this.http.get(this.contextUrl).subscribe(context => {   
+                this.context  = context;                         
+                this.http.get( this.context.sources.individual.json.daily.hospVaccPersons).subscribe((vaccinatedHosp: any) => {                  
+                  this.vaccinatedHosp = vaccinatedHosp.slice(-50);      
+                  for (let entry of this.vaccinatedHosp) {                
+                    this.newHospitalizedVacc.push(entry.entries);
                 }
-            );
+                console.log("Entries Vaccinated Hospitalized: " + this.vaccinatedHosp.length)                  
+                });
+              });
+
+
+
+            this.http.get(this.contextUrl).subscribe(context => {   
+                this.context  = context;                         
+                this.http.get( this.context.sources.individual.json.daily.casesVaccPersons).subscribe((vaccinatedCases: any) => {                
+                  this.vaccinatedCases = vaccinatedCases.slice(-50);      
+                  for (let entry of this.vaccinatedCases) {                
+                    this.newCasesVacc.push(entry.entries);
+                }
+                console.log("Entries Vaccinated: " + this.vaccinatedCases.length)                  
+                });
+              });
 
 
 
@@ -154,7 +164,7 @@ export class AppComponent implements OnInit {
 
     }
 
-    constructor(private bagFetcherService: BagFetcherService) {
+    constructor(private http: HttpClient ) {
     }
 
 
