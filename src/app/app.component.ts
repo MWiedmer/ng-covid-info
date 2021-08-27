@@ -1,8 +1,10 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 
 import {HttpClient} from "@angular/common/http";
 import {Cases} from "./model/Cases";
 import {CasesVacc} from "./model/CasesVacc";
+import { ChartOptions, ChartType, ChartDataSets } from 'chart.js';
+import { SingleDataSet, Label, monkeyPatchChartJsLegend, monkeyPatchChartJsTooltip, BaseChartDirective } from 'ng2-charts';
 
 
 @Component({
@@ -11,10 +13,15 @@ import {CasesVacc} from "./model/CasesVacc";
     styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+    
+
     title = 'covid-info';
     private contextUrl = 'https://www.covid19.admin.ch/api/data/context';  // URL to web api
     private context: any;
 
+    @ViewChild(BaseChartDirective)
+    public chart: BaseChartDirective | undefined; // Now you can reference your chart via `this.chart`
+    
 
     options: any;
     options2: any;
@@ -34,6 +41,28 @@ export class AppComponent implements OnInit {
     latestVaccinated: number = 0;
     latestUnvaccinated: number = 0;
 
+    public barChartOptions: ChartOptions = {
+    responsive: true,
+  };
+  public barChartLabels: Label[] = this.xAxisData;
+  public barChartType: ChartType = 'bar';
+  public barChartLegend = true;
+  public barChartPlugins = [];
+
+  public barChartData: ChartDataSets[] = [
+    { data: this.newCases, label: 'New Cases' },
+    { data: this.newCasesVacc, label: 'New Cases Vaccinated' }
+  ];
+
+  public pieChartOptions: ChartOptions = {
+    responsive: true,
+  };
+  public pieChartLabels: Label[] = ['Unvaccinatet', 'Vaccinated'];
+  public pieChartData: SingleDataSet = [0, 0];
+  public pieChartType: ChartType = 'pie';
+  public pieChartLegend = true;
+  public pieChartPlugins = [];
+
 
     ngOnInit(): void {
 
@@ -49,8 +78,21 @@ export class AppComponent implements OnInit {
                     this.newCases.push(entry.entries);
                 }
                 sumofUnvaccCases = this.cases[this.cases.length-1].sumTotal;
-                console.log(this.cases[this.cases.length-1].sumTotal);
+               
                 console.log("Entries Total: " + sumofUnvaccCases)
+                const last7days = this.cases.slice(-7);
+                let sum: number = 0;
+                for(let day of last7days) {
+                    sum = sum + day.entries;
+                }
+                console.log("Cases Last 7 Days: " + sum);
+                //this.pieChartData[0] =  this.cases[this.cases.length-1].sumTotal;
+                this.pieChartData[0] =  sum;
+                console.log(this.pieChartData);
+                if (this.chart != undefined) {
+                    this.chart.chart.update();
+                   }
+
             });
         });
 
@@ -88,8 +130,22 @@ export class AppComponent implements OnInit {
                     this.newCasesVacc.push(entry.entries);
                 }
                 sumOfVaccCases = this.vaccinatedCases[this.vaccinatedCases.length-1].sumTotal;
-                sumofUnvaccCases = sumofUnvaccCases - sumOfVaccCases;
                 console.log("Entries Vaccinated: " + this.vaccinatedCases.length)
+
+                const last7days = this.vaccinatedCases.slice(-7);
+                let sum: number = 0;
+                for(let day of last7days) {
+                    sum = sum + day.entries;
+                }
+                console.log("Vaccinated Cases Last 7 Days: " + sum);
+
+
+                //this.pieChartData[1] =  this.vaccinatedCases[this.vaccinatedCases.length-1].sumTotal;
+                this.pieChartData[1] =  sum;
+                console.log(this.vaccinatedCases);
+               if (this.chart != undefined) {
+                this.chart.chart.update();
+               }
             });
         });
 
@@ -166,44 +222,22 @@ export class AppComponent implements OnInit {
             },
         };
 
-        this.optioinsPie = {
-            title: {
-                text: 'Share Vaccinated / Unvaccinated',
-                subtext: 'Total',
-                x: 'center'
-            },
-            tooltip: {
-                trigger: 'item',
-                formatter: '{a} <br/>{b} : {c} ({d}%)'
-            },
-            legend: {
-                x: 'center',
-                y: 'bottom',
-                data: ['Unvaccinated', 'Vaccinated']
-            },
-            calculable: true,
-            series: [
-                {
-                    name: 'area',
-                    type: 'pie',
-                    radius: [30, 110],
-                    roseType: 'area',
-                    data: [
-                        {value: sumofUnvaccCases, name: 'Unvaccinated'},
-                        {value: sumOfVaccCases, name: 'Vaccinated'}
-                    ]
-                }
-            ]
-
-        };
+    
 
 
 
 
     }
 
+
     constructor(private http: HttpClient) {
+        monkeyPatchChartJsTooltip();
+        monkeyPatchChartJsLegend();
     }
 
 
 }
+function BaseChartComponent(BaseChartComponent: any) {
+    throw new Error('Function not implemented.');
+}
+
