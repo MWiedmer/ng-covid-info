@@ -1,12 +1,10 @@
-
-
 <div class="content" role="main">
 
 
     <h2>{{ title }}</h2>
-    <div echarts [options]="options" class="demo-chart"></div>
+    <div echarts [options]="options"   theme="dark" class="demo-chart"></div>
 
-    <div echarts [options]="options2" class="demo-chart"></div>
+    <div echarts [merge]="options2" [options]="options2" class="demo-chart"></div>
 
-
+    <div echarts [merge]="optioinsPie" [options]="optioinsPie" theme="dark" class="demo-chart"></div>
 </div>
