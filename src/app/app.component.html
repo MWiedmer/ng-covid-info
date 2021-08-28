@@ -3,7 +3,20 @@
 
     <h2>{{ title }}</h2>
 
-    <table style="width: 100%">
+    <div echarts [options]="options"   theme="dark" class="demo-chart"></div>
+
+    <!--<div style="display: block;">
+      <canvas baseChart 
+        [datasets]="barChartData"
+        [labels]="barChartLabels"
+        [options]="barChartOptions"
+        [plugins]="barChartPlugins"
+        [legend]="barChartLegend"
+        [chartType]="barChartType">
+      </canvas>
+    </div>-->
+
+    <!--<table style="width: 100%">
         <td>    
             <div style="display: block;">
             <canvas baseChart 
@@ -16,20 +29,10 @@
             </canvas>
             </div>
         </td>
-        <td> <div style="display: block;">
-            <canvas baseChart 
-              [datasets]="barChartData"
-              [labels]="barChartLabels"
-              [options]="barChartOptions"
-              [plugins]="barChartPlugins"
-              [legend]="barChartLegend"
-              [chartType]="barChartType">
-            </canvas>
-          </div></td>
     </table>
 
-    <div echarts [options]="options"   theme="dark" class="demo-chart"></div>
-    <div echarts [merge]="options2" [options]="options2" class="demo-chart"></div>
+    
+    <div echarts [merge]="options2" [options]="options2" class="demo-chart"></div>-->
 
     
 

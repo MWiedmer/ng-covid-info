@@ -28,12 +28,15 @@ export class AppComponent implements OnInit {
     optioinsPie: any;
 
     cases: Cases[] = [];
+
     hospCases: Cases[] = [];
     vaccinatedCases: CasesVacc[] = [];
     vaccinatedHosp: CasesVacc[] = [];
 
     xAxisData: any[] = [];
     newCases: any[] = [];
+    newCasesRollingAvg: any[] = [];
+    newCasesVaccRollAvg: any[] = [];
     newCasesVacc: any[] = [];
     newHospitalized: any[] = [];
     newHospitalizedVacc: any[] = [];
@@ -51,6 +54,7 @@ export class AppComponent implements OnInit {
 
   public barChartData: ChartDataSets[] = [
     { data: this.newCases, label: 'New Cases' },
+    { data: this.newCasesRollingAvg, label: 'New Cases RollingAvg'},
     { data: this.newCasesVacc, label: 'New Cases Vaccinated' }
   ];
 
@@ -80,12 +84,18 @@ export class AppComponent implements OnInit {
                 sumofUnvaccCases = this.cases[this.cases.length-1].sumTotal;
                
                 console.log("Entries Total: " + sumofUnvaccCases)
+                for(var _j = 0; _j < 7; _j++) {
+                    this.newCasesRollingAvg.push(null);
+                }
+                getRollingAvg(this.cases, this.newCasesRollingAvg);
+                console.log(this.newCasesRollingAvg);
                 const last7days = this.cases.slice(-7);
                 let sum: number = 0;
                 for(let day of last7days) {
                     sum = sum + day.entries;
                 }
                 console.log("Cases Last 7 Days: " + sum);
+                console.log("Rolling Avg Array: " + this.newCasesRollingAvg);
                 //this.pieChartData[0] =  this.cases[this.cases.length-1].sumTotal;
                 this.pieChartData[0] =  sum;
                 console.log(this.pieChartData);
@@ -137,6 +147,10 @@ export class AppComponent implements OnInit {
                 for(let day of last7days) {
                     sum = sum + day.entries;
                 }
+                for(var _j = 0; _j < 7; _j++) {
+                    this.newCasesVaccRollAvg.push(null);
+                }
+                getRollingAvg(this.vaccinatedCases, this.newCasesVaccRollAvg);
                 console.log("Vaccinated Cases Last 7 Days: " + sum);
 
 
@@ -152,7 +166,7 @@ export class AppComponent implements OnInit {
 
         this.options = {
             legend: {
-                data: ['New Cases', 'New vaccinated Cases'],
+                data: ['New Cases', 'New Cases Rolling Avg', 'New vaccinated Cases', 'New vaccinated Cases Rolling Avg'],
                 align: 'left',
             },
             tooltip: {},
@@ -160,7 +174,7 @@ export class AppComponent implements OnInit {
                 data: this.xAxisData,
                 silent: false,
                 splitLine: {
-                    show: false,
+                    show: true,
                 },
             },
             yAxis: {},
@@ -172,13 +186,25 @@ export class AppComponent implements OnInit {
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
+                    name: 'New Cases Rolling Avg',
+                    type: 'line',
+                    data: this.newCasesRollingAvg,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
                     name: 'New vaccinated Cases',
                     type: 'bar',
                     data: this.newCasesVacc,
                     animationDelay(idx: number) {
                         return idx * 10 + 100;
                     },
-                },
+                },                
+                {
+                    name: 'New vaccinated Cases Rolling Avg',
+                    type: 'line',
+                    data: this.newCasesVaccRollAvg,
+                    animationDelay: (idx: number) => idx * 10,
+                }
             ],
             animationEasing: 'elasticOut',
             animationDelayUpdate(idx: number) {
@@ -222,6 +248,7 @@ export class AppComponent implements OnInit {
             },
         };
 
+
     
 
 
@@ -230,14 +257,44 @@ export class AppComponent implements OnInit {
     }
 
 
+
+
     constructor(private http: HttpClient) {
         monkeyPatchChartJsTooltip();
         monkeyPatchChartJsLegend();
     }
 
 
+
 }
-function BaseChartComponent(BaseChartComponent: any) {
-    throw new Error('Function not implemented.');
+
+function getRollingAvg(cases: any[], avgRolling: number[]) {
+    console.log("Cases to Analyzs: "  + cases);
+    let rolling:number[] = [];
+    let startIndex = 0;
+    while(startIndex + 8  < cases.length) {
+        //console.log("Index Begin: " +startIndex);
+        let avgDatapoint = 0;
+        for (var _i = startIndex; _i <startIndex + 7; _i++) {
+            //console.log("Inde<: " + startIndex +", Case " + _i + " to Analyzs: "  + cases[_i]);
+              avgDatapoint += cases[_i].entries;
+        }
+        rolling[startIndex] = Math.floor(avgDatapoint / 7);
+        avgRolling.push( Math.floor(avgDatapoint / 7));
+        startIndex += 1;
+        //console.log("Next Index: " +startIndex);
+    }
+    return rolling;
+}
+
+
+
+function calculateAvg(cases: number[]) {
+    length = cases.length;
+    let sum = 0;
+    for(let entry of cases) {
+        sum = sum + entry
+    }
+    return sum / length;
 }
 
