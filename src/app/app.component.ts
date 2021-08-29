@@ -3,10 +3,6 @@ import {Component, OnInit, ViewChild} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {Cases} from "./model/Cases";
 import {CasesVacc} from "./model/CasesVacc";
-import { ChartOptions, ChartType, ChartDataSets } from 'chart.js';
-import { SingleDataSet, Label, monkeyPatchChartJsLegend, monkeyPatchChartJsTooltip, BaseChartDirective } from 'ng2-charts';
-
-
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
@@ -19,13 +15,14 @@ export class AppComponent implements OnInit {
     private contextUrl = 'https://www.covid19.admin.ch/api/data/context';  // URL to web api
     private context: any;
 
-    @ViewChild(BaseChartDirective)
-    public chart: BaseChartDirective | undefined; // Now you can reference your chart via `this.chart`
-    
+
 
     options: any;
     options2: any;
+
     optioinsPie: any;
+    updateOptions: any;
+    updatePieOptions: any;
 
     cases: Cases[] = [];
 
@@ -44,29 +41,35 @@ export class AppComponent implements OnInit {
     latestVaccinated: number = 0;
     latestUnvaccinated: number = 0;
 
-    public barChartOptions: ChartOptions = {
-    responsive: true,
-  };
-  public barChartLabels: Label[] = this.xAxisData;
-  public barChartType: ChartType = 'bar';
-  public barChartLegend = true;
-  public barChartPlugins = [];
 
-  public barChartData: ChartDataSets[] = [
-    { data: this.newCases, label: 'New Cases' },
-    { data: this.newCasesRollingAvg, label: 'New Cases RollingAvg'},
-    { data: this.newCasesVacc, label: 'New Cases Vaccinated' }
-  ];
-
-  public pieChartOptions: ChartOptions = {
-    responsive: true,
-  };
-  public pieChartLabels: Label[] = ['Unvaccinatet', 'Vaccinated'];
-  public pieChartData: SingleDataSet = [0, 0];
-  public pieChartType: ChartType = 'pie';
-  public pieChartLegend = true;
-  public pieChartPlugins = [];
-
+  pieOptions: any =  {
+    title: {
+        text: 'Vaccinated vs Unvaccinated Patients',
+        left: 'center'
+    },
+    legend: {
+        orient: 'vertical',
+        left: 'left',
+    },
+    series: [
+        {
+            name: 'patie',
+            type: 'pie',
+            radius: '50%',
+            data: [
+                {value: this.latestVaccinated, name: 'Latest Vaccinated'},
+                {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Latest Unvaccinated'}
+            ],
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        }
+    ]
+};
 
     ngOnInit(): void {
 
@@ -97,11 +100,61 @@ export class AppComponent implements OnInit {
                 console.log("Cases Last 7 Days: " + sum);
                 console.log("Rolling Avg Array: " + this.newCasesRollingAvg);
                 //this.pieChartData[0] =  this.cases[this.cases.length-1].sumTotal;
-                this.pieChartData[0] =  sum;
-                console.log(this.pieChartData);
-                if (this.chart != undefined) {
-                    this.chart.chart.update();
-                   }
+                this.latestUnvaccinated = sum;
+
+
+                this.updatePieOptions = {
+                    series: [
+                        {
+                            name: 'patie',
+                            type: 'pie',
+                            radius: '50%',
+                            data: [
+                                {value: this.latestVaccinated, name: 'Latest Vaccinated'},
+                                {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Latest Unvaccinated'}
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }
+                    ]
+                }
+
+
+                this.updateOptions = {
+                    series: [
+                        {
+                            name: 'New Cases',
+                            type: 'bar',
+                            data: this.newCases,
+                            animationDelay: (idx: number) => idx * 10,
+                        },
+                        {
+                            name: 'New Cases Rolling Avg',
+                            type: 'line',
+                            data: this.newCasesRollingAvg,
+                            animationDelay: (idx: number) => idx * 10,
+                        },
+                        {
+                            name: 'New vaccinated Cases',
+                            type: 'bar',
+                            data: this.newCasesVacc,
+                            animationDelay(idx: number) {
+                                return idx * 10 + 100;
+                            },
+                        },                
+                        {
+                            name: 'New vaccinated Cases Rolling Avg',
+                            type: 'line',
+                            data: this.newCasesVaccRollAvg,
+                            animationDelay: (idx: number) => idx * 10,
+                        }
+                    ],
+                };
 
             });
         });
@@ -154,12 +207,60 @@ export class AppComponent implements OnInit {
                 console.log("Vaccinated Cases Last 7 Days: " + sum);
 
 
-                //this.pieChartData[1] =  this.vaccinatedCases[this.vaccinatedCases.length-1].sumTotal;
-                this.pieChartData[1] =  sum;
+
+                this.latestVaccinated = sum;
+                this.updatePieOptions = {
+                    series: [
+                        {
+                            name: 'patie',
+                            type: 'pie',
+                            radius: '50%',
+                            data: [
+                                {value: this.latestVaccinated, name: 'Latest Vaccinated'},
+                                {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Latest Unvaccinated'}
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    scale: true,
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }
+                    ]
+                }
                 console.log(this.vaccinatedCases);
-               if (this.chart != undefined) {
-                this.chart.chart.update();
-               }
+               this.updateOptions = {
+                series: [
+                    {
+                        name: 'New Cases',
+                        type: 'bar',
+                        data: this.newCases,
+                        animationDelay: (idx: number) => idx * 10,
+                    },
+                    {
+                        name: 'New Cases Rolling Avg',
+                        type: 'line',
+                        data: this.newCasesRollingAvg,
+                        animationDelay: (idx: number) => idx * 10,
+                    },
+                    {
+                        name: 'New vaccinated Cases',
+                        type: 'bar',
+                        data: this.newCasesVacc,
+                        animationDelay(idx: number) {
+                            return idx * 10 + 100;
+                        },
+                    },                
+                    {
+                        name: 'New vaccinated Cases Rolling Avg',
+                        type: 'line',
+                        data: this.newCasesVaccRollAvg,
+                        animationDelay: (idx: number) => idx * 10,
+                    }
+                ],
+            };
             });
         });
 
@@ -260,8 +361,6 @@ export class AppComponent implements OnInit {
 
 
     constructor(private http: HttpClient) {
-        monkeyPatchChartJsTooltip();
-        monkeyPatchChartJsLegend();
     }
 
 

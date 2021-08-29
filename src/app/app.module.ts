@@ -5,7 +5,6 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgxEchartsModule } from 'ngx-echarts';
-import { ChartsModule } from 'ng2-charts';
 
 @NgModule({
   declarations: [
@@ -15,7 +14,6 @@ import { ChartsModule } from 'ng2-charts';
     BrowserModule,
     HttpClientModule,
     BrowserAnimationsModule,
-    ChartsModule,
     NgxEchartsModule.forRoot({
       echarts: () => import('echarts')
     })

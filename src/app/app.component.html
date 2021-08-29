@@ -1,9 +1,18 @@
-<div class="content" role="main">
 
 
-    <h2>{{ title }}</h2>
 
-    <div echarts [options]="options"   theme="dark" class="demo-chart"></div>
+  <div class="container">
+    <div class="Header"><h2>{{ title }}</h2></div>
+    <div class="Content">
+      <div echarts [options]="options"  [merge]="updateOptions"  theme="dark" class="demo-chart"></div>
+      <div echarts [options]="pieOptions"  [merge]="updatePieOptions" theme="dark" class="demo-chart"></div>
+    </div>
+    <div class="Footer"></div>
+  </div>
+
+    
+
+    
 
     <!--<div style="display: block;">
       <canvas baseChart 
@@ -33,8 +42,3 @@
 
     
     <div echarts [merge]="options2" [options]="options2" class="demo-chart"></div>-->
-
-    
-
-
-</div>
