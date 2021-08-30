@@ -126,6 +126,13 @@ export class AppComponent implements OnInit {
 
 
                 this.updateOptions = {
+                    xAxis: {
+                        data: this.xAxisData,
+                        silent: false,
+                        splitLine: {
+                            show: false,
+                        },
+                    },
                     series: [
                         {
                             name: 'New Cases',
@@ -210,6 +217,13 @@ export class AppComponent implements OnInit {
 
                 this.latestVaccinated = sum;
                 this.updatePieOptions = {
+                    xAxis: {
+                        data: this.xAxisData,
+                        silent: false,
+                        splitLine: {
+                            show: false,
+                        },
+                    },
                     series: [
                         {
                             name: 'patie',
@@ -232,6 +246,13 @@ export class AppComponent implements OnInit {
                 }
                 console.log(this.vaccinatedCases);
                this.updateOptions = {
+                xAxis: {
+                    data: this.xAxisData,
+                    silent: false,
+                    splitLine: {
+                        show: false,
+                    },
+                },
                 series: [
                     {
                         name: 'New Cases',
