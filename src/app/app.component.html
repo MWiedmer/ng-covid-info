@@ -4,8 +4,12 @@
   <div class="container">
     <div class="Header"><h2>{{ title }}</h2></div>
     <div class="Content">
+      <button (click)="toggleGraph()">Rerender Graph</button>
+      <span *ngIf=doDisplay>
       <div echarts [options]="options"  [merge]="updateOptions"  theme="dark" class="demo-chart"></div>
+      <div echarts theme="dark" [merge]="updateOptions2" [options]="options2" class="demo-chart"></div>
       <div echarts [options]="pieOptions"  [merge]="updatePieOptions" theme="dark" class="demo-chart"></div>
+    </span>
     </div>
     <div class="Footer"></div>
   </div>

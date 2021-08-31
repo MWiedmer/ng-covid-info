@@ -3,6 +3,7 @@ import {Component, OnInit, ViewChild} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {Cases} from "./model/Cases";
 import {CasesVacc} from "./model/CasesVacc";
+import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
@@ -15,6 +16,7 @@ export class AppComponent implements OnInit {
     private contextUrl = 'https://www.covid19.admin.ch/api/data/context';  // URL to web api
     private context: any;
 
+    doDisplay: boolean = true;
 
 
     options: any;
@@ -22,6 +24,7 @@ export class AppComponent implements OnInit {
 
     optioinsPie: any;
     updateOptions: any;
+    updateOptions2: any;
     updatePieOptions: any;
 
     cases: Cases[] = [];
@@ -103,65 +106,8 @@ export class AppComponent implements OnInit {
                 this.latestUnvaccinated = sum;
 
 
-                this.updatePieOptions = {
-                    series: [
-                        {
-                            name: 'patie',
-                            type: 'pie',
-                            radius: '50%',
-                            data: [
-                                {value: this.latestVaccinated, name: 'Latest Vaccinated'},
-                                {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Latest Unvaccinated'}
-                            ],
-                            emphasis: {
-                                itemStyle: {
-                                    shadowBlur: 10,
-                                    shadowOffsetX: 0,
-                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
-                                }
-                            }
-                        }
-                    ]
-                }
-
-
-                this.updateOptions = {
-                    xAxis: {
-                        data: this.xAxisData,
-                        silent: false,
-                        splitLine: {
-                            show: false,
-                        },
-                    },
-                    series: [
-                        {
-                            name: 'New Cases',
-                            type: 'bar',
-                            data: this.newCases,
-                            animationDelay: (idx: number) => idx * 10,
-                        },
-                        {
-                            name: 'New Cases Rolling Avg',
-                            type: 'line',
-                            data: this.newCasesRollingAvg,
-                            animationDelay: (idx: number) => idx * 10,
-                        },
-                        {
-                            name: 'New vaccinated Cases',
-                            type: 'bar',
-                            data: this.newCasesVacc,
-                            animationDelay(idx: number) {
-                                return idx * 10 + 100;
-                            },
-                        },                
-                        {
-                            name: 'New vaccinated Cases Rolling Avg',
-                            type: 'line',
-                            data: this.newCasesVaccRollAvg,
-                            animationDelay: (idx: number) => idx * 10,
-                        }
-                    ],
-                };
+                this.updatePieChartOptions();
+                this.updateOptionsCases();
 
             });
         });
@@ -175,6 +121,7 @@ export class AppComponent implements OnInit {
                     this.newHospitalized.push(entry.entries);
                 }
                 console.log("Entries Hospitalized: " + this.hospCases.length)
+                this.updateOptionsHosp();
             });
         });
 
@@ -187,6 +134,7 @@ export class AppComponent implements OnInit {
                     this.newHospitalizedVacc.push(entry.entries);
                 }
                 console.log("Entries Vaccinated Hospitalized: " + this.vaccinatedHosp.length)
+                this.updateOptionsHosp();
             });
         });
 
@@ -216,72 +164,9 @@ export class AppComponent implements OnInit {
 
 
                 this.latestVaccinated = sum;
-                this.updatePieOptions = {
-                    xAxis: {
-                        data: this.xAxisData,
-                        silent: false,
-                        splitLine: {
-                            show: false,
-                        },
-                    },
-                    series: [
-                        {
-                            name: 'patie',
-                            type: 'pie',
-                            radius: '50%',
-                            data: [
-                                {value: this.latestVaccinated, name: 'Latest Vaccinated'},
-                                {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Latest Unvaccinated'}
-                            ],
-                            emphasis: {
-                                itemStyle: {
-                                    scale: true,
-                                    shadowBlur: 10,
-                                    shadowOffsetX: 0,
-                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
-                                }
-                            }
-                        }
-                    ]
-                }
+                this.updatePieChartOptions();
                 console.log(this.vaccinatedCases);
-               this.updateOptions = {
-                xAxis: {
-                    data: this.xAxisData,
-                    silent: false,
-                    splitLine: {
-                        show: false,
-                    },
-                },
-                series: [
-                    {
-                        name: 'New Cases',
-                        type: 'bar',
-                        data: this.newCases,
-                        animationDelay: (idx: number) => idx * 10,
-                    },
-                    {
-                        name: 'New Cases Rolling Avg',
-                        type: 'line',
-                        data: this.newCasesRollingAvg,
-                        animationDelay: (idx: number) => idx * 10,
-                    },
-                    {
-                        name: 'New vaccinated Cases',
-                        type: 'bar',
-                        data: this.newCasesVacc,
-                        animationDelay(idx: number) {
-                            return idx * 10 + 100;
-                        },
-                    },                
-                    {
-                        name: 'New vaccinated Cases Rolling Avg',
-                        type: 'line',
-                        data: this.newCasesVaccRollAvg,
-                        animationDelay: (idx: number) => idx * 10,
-                    }
-                ],
-            };
+                this.updateOptionsCases();
             });
         });
 
@@ -376,6 +261,113 @@ export class AppComponent implements OnInit {
 
 
 
+    }
+
+    public toggleGraph() {
+        //this.doDisplay = !this.doDisplay;
+        this.updateAllOptions();
+    }
+
+    private updateOptionsCases() {
+        this.updateOptions = {
+            xAxis: {
+                data: this.xAxisData,
+                silent: false,
+                splitLine: {
+                    show: false,
+                },
+            },
+            series: [
+                {
+                    name: 'New Cases',
+                    type: 'bar',
+                    data: this.newCases,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'New Cases Rolling Avg',
+                    type: 'line',
+                    data: this.newCasesRollingAvg,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'New vaccinated Cases',
+                    type: 'bar',
+                    data: this.newCasesVacc,
+                    animationDelay(idx: number) {
+                        return idx * 10 + 100;
+                    },
+                },                
+                {
+                    name: 'New vaccinated Cases Rolling Avg',
+                    type: 'line',
+                    data: this.newCasesVaccRollAvg,
+                    animationDelay: (idx: number) => idx * 10,
+                }
+            ],
+        };
+    }
+
+    private updateOptionsHosp() {
+        this.updateOptions2 = {
+            xAxis: {
+                data: this.xAxisData,
+                silent: false,
+                splitLine: {
+                    show: false,
+                },
+            },
+            yAxis: {},
+            series: [
+                {
+                    name: 'New Hospitalized',
+                    type: 'bar',
+                    data: this.newHospitalized,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'New vaccinated Hospitalized',
+                    type: 'bar',
+                    data: this.newHospitalizedVacc,
+                    animationDelay(idx: number) {
+                        return idx * 10 + 100;
+                    },
+                },
+            ],
+            animationEasing: 'elasticOut',
+            animationDelayUpdate(idx: number) {
+                return idx * 5;
+            },
+        };
+    }
+
+    private updatePieChartOptions() {
+        this.updatePieOptions = {
+            series: [
+                {
+                    name: 'patie',
+                    type: 'pie',
+                    radius: '50%',
+                    data: [
+                        {value: this.latestVaccinated, name: 'Latest Vaccinated'},
+                        {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Latest Unvaccinated'}
+                    ],
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    private updateAllOptions() {
+        this.updateOptionsCases();
+        this.updateOptionsHosp();
+        this.updatePieChartOptions();
     }
 
 
