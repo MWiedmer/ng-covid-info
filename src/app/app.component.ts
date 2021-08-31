@@ -11,12 +11,13 @@ import {IcuCap} from "./model/IcuCap";
 })
 export class AppComponent implements OnInit {
     
-
-    title = 'Corona Info Dashboard Switzerland';
+    daysToShow: number = 50;
+    title = 'Corona Info Dashboard Switzerland: Last ' +  this.daysToShow + " days";
     private contextUrl = 'https://www.covid19.admin.ch/api/data/context';  // URL to web api
     private context: any;
 
     doDisplay: boolean = true;
+    
 
 
     options: any;
@@ -56,7 +57,7 @@ export class AppComponent implements OnInit {
 
   pieOptions: any =  {
     title: {
-        text: 'Vaccinated vs Unvaccinated Patients',
+        text: 'Vaccinated vs Unvaccinated Covid Patients',
         left: 'center'
     },
     legend: {
@@ -69,8 +70,8 @@ export class AppComponent implements OnInit {
             type: 'pie',
             radius: '50%',
             data: [
-                {value: this.latestVaccinated, name: 'Latest Vaccinated'},
-                {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Latest Unvaccinated'}
+                {value: this.latestVaccinated, name: 'Vaccinated'},
+                {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Unvaccinated'}
             ],
             emphasis: {
                 itemStyle: {
@@ -91,7 +92,7 @@ export class AppComponent implements OnInit {
         this.http.get(this.contextUrl).subscribe(context => {
             this.context = context;
             this.http.get(this.context.sources.individual.json.daily.cases).subscribe((cases: any) => {
-                this.cases = cases.filter((cases: { geoRegion: string; }) => cases.geoRegion == "CH").slice(-50);
+                this.cases = cases.filter((cases: { geoRegion: string; }) => cases.geoRegion == "CH").slice(-this.daysToShow);
                 for (let entry of this.cases) {
                     this.xAxisData.push(entry.datum);
                     this.newCases.push(entry.entries);
@@ -121,7 +122,7 @@ export class AppComponent implements OnInit {
         this.http.get(this.contextUrl).subscribe(context => {
             this.context = context;
             this.http.get(this.context.sources.individual.json.daily.hosp).subscribe((hospCases: any) => {
-                this.hospCases = hospCases.filter((hospCases: { geoRegion: string; }) => hospCases.geoRegion == "CH").slice(-50);
+                this.hospCases = hospCases.filter((hospCases: { geoRegion: string; }) => hospCases.geoRegion == "CH").slice(-this.daysToShow);
                 for (let entry of this.hospCases) {
                     this.newHospitalized.push(entry.entries);
                 }
@@ -138,7 +139,7 @@ export class AppComponent implements OnInit {
         this.http.get(this.contextUrl).subscribe(context => {
             this.context = context;
             this.http.get(this.context.sources.individual.json.daily.hospVaccPersons).subscribe((vaccinatedHosp: any) => {
-                this.vaccinatedHosp = vaccinatedHosp.slice(-50);
+                this.vaccinatedHosp = vaccinatedHosp.slice(-this.daysToShow);
                 for (let entry of this.vaccinatedHosp) {
                     this.newHospitalizedVacc.push(entry.entries);
                 }
@@ -156,7 +157,7 @@ export class AppComponent implements OnInit {
         this.http.get(this.contextUrl).subscribe(context => {
             this.context = context;
             this.http.get(this.context.sources.individual.json.daily.casesVaccPersons).subscribe((vaccinatedCases: any) => {
-                this.vaccinatedCases = vaccinatedCases.slice(-50);
+                this.vaccinatedCases = vaccinatedCases.slice(-this.daysToShow);
                 for (let entry of this.vaccinatedCases) {
                     this.newCasesVacc.push(entry.entries);
                 }
@@ -186,7 +187,7 @@ export class AppComponent implements OnInit {
             this.context = context;
             this.http.get(this.context.sources.individual.json.daily.hospCapacity).subscribe((hospCap: any) => {
 
-                this.icuCap = hospCap.filter((hospCap: { geoRegion: string; }) => hospCap.geoRegion == "CH").slice(-50);
+                this.icuCap = hospCap.filter((hospCap: { geoRegion: string; }) => hospCap.geoRegion == "CH").slice(-this.daysToShow);
                 for (let entry of this.icuCap) {
                     this.icuCapacity.push(entry.ICU_Capacity);
                     this.icuCovidPatients.push(entry.ICU_Covid19Patients);
@@ -517,8 +518,8 @@ export class AppComponent implements OnInit {
                     type: 'pie',
                     radius: '50%',
                     data: [
-                        {value: this.latestVaccinated, name: 'Latest Vaccinated'},
-                        {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Latest Unvaccinated'}
+                        {value: this.latestVaccinated, name: 'Vaccinated'},
+                        {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Unvaccinated'}
                     ],
                     emphasis: {
                         itemStyle: {

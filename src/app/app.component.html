@@ -6,10 +6,10 @@
     <div class="Content">
       <button (click)="toggleGraph()">Rerender Graph</button>
       <span *ngIf=doDisplay>
-      <div echarts [options]="options"  [merge]="updateOptions"  theme="dark" class="demo-chart"></div>
-      <div echarts theme="dark" [merge]="updateOptions2" [options]="options2" class="demo-chart"></div>
-      <div echarts [options]="pieOptions"  [merge]="updatePieOptions" theme="dark" class="demo-chart"></div>
-      <div echarts [options]="icuOptions"  [merge]="updateIcuOptions" theme="dark" class="demo-chart"></div>
+      <div echarts [options]="options"  [merge]="updateOptions"  theme="dark" class="chart"></div>
+      <div echarts theme="dark" [merge]="updateOptions2" [options]="options2" class="chart"></div>
+      <div echarts [options]="icuOptions"  [merge]="updateIcuOptions" theme="dark" class="chart"></div>
+      <div echarts [options]="pieOptions"  [merge]="updatePieOptions" theme="dark" class="chart"></div>
     </span>
     </div>
     <div class="Footer"></div>
