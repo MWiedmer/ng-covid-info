@@ -12,4 +12,5 @@
   .Header { grid-area: Header; text-align: center; vertical-align: middle; color: lightblue;} 
   .Content { grid-area: Content; }
   .Footer { grid-area: Footer; }
-  h2 {font-size: 30pt;}
+  h2 {margin-top:50px;
+    font-size: 30pt;}

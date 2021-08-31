@@ -3,7 +3,7 @@ import {Component, OnInit, ViewChild} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {Cases} from "./model/Cases";
 import {CasesVacc} from "./model/CasesVacc";
-import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
+import {IcuCap} from "./model/IcuCap";
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
@@ -12,7 +12,7 @@ import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
 export class AppComponent implements OnInit {
     
 
-    title = 'covid-info';
+    title = 'Corona Info Dashboard Switzerland';
     private contextUrl = 'https://www.covid19.admin.ch/api/data/context';  // URL to web api
     private context: any;
 
@@ -21,17 +21,24 @@ export class AppComponent implements OnInit {
 
     options: any;
     options2: any;
+    icuOptions: any;
 
     optioinsPie: any;
     updateOptions: any;
     updateOptions2: any;
     updatePieOptions: any;
+    updateIcuOptions: any
 
     cases: Cases[] = [];
 
     hospCases: Cases[] = [];
     vaccinatedCases: CasesVacc[] = [];
     vaccinatedHosp: CasesVacc[] = [];
+
+    icuCap: IcuCap[] = [];
+    icuCapacity: any[] = [];
+    icuCovidPatients: any[] = [];
+    icuNonCovidPatients: any[] = [];
 
     xAxisData: any[] = [];
     newCases: any[] = [];
@@ -91,25 +98,21 @@ export class AppComponent implements OnInit {
                 }
                 sumofUnvaccCases = this.cases[this.cases.length-1].sumTotal;
                
-                console.log("Entries Total: " + sumofUnvaccCases)
                 for(var _j = 0; _j < 7; _j++) {
                     this.newCasesRollingAvg.push(null);
                 }
                 getRollingAvg(this.cases, this.newCasesRollingAvg);
-                console.log(this.newCasesRollingAvg);
                 const last7days = this.cases.slice(-7);
                 let sum: number = 0;
                 for(let day of last7days) {
                     sum = sum + day.entries;
                 }
-                console.log("Cases Last 7 Days: " + sum);
-                console.log("Rolling Avg Array: " + this.newCasesRollingAvg);
-                //this.pieChartData[0] =  this.cases[this.cases.length-1].sumTotal;
                 this.latestUnvaccinated = sum;
 
 
                 this.updatePieChartOptions();
                 this.updateOptionsCases();
+                console.log("Cases loaded: " + this.cases.length)
 
             });
         });
@@ -122,12 +125,12 @@ export class AppComponent implements OnInit {
                 for (let entry of this.hospCases) {
                     this.newHospitalized.push(entry.entries);
                 }
-                console.log("Entries Hospitalized: " + this.hospCases.length)
                 for(var _j = 0; _j < 7; _j++) {
                     this.newCasesHospRollingAvg.push(null);
                 }
                 getRollingAvg(this.hospCases, this.newCasesHospRollingAvg);
                 this.updateOptionsHosp();
+                console.log("Hosp Cases loaded: " + this.hospCases.length)
             });
         });
 
@@ -139,14 +142,12 @@ export class AppComponent implements OnInit {
                 for (let entry of this.vaccinatedHosp) {
                     this.newHospitalizedVacc.push(entry.entries);
                 }
-                console.log("Entries Vaccinated Hospitalized: " + this.vaccinatedHosp.length)
                 for(var _j = 0; _j < 7; _j++) {
                     this.newCasesHospaccRollAvg.push(null);
                 }
                 getRollingAvg(this.vaccinatedHosp, this.newCasesHospaccRollAvg);
-                console.log("Rolling Avg Hosp Vacc Base: " + this.newHospitalizedVacc);
-                console.log("Rolling Avg Hosp Vacc: " + this.newCasesHospaccRollAvg);
                 this.updateOptionsHosp();
+                console.log("Hosp Cases Vacc loaded: " + this.vaccinatedHosp.length)
             });
         });
 
@@ -160,8 +161,6 @@ export class AppComponent implements OnInit {
                     this.newCasesVacc.push(entry.entries);
                 }
                 sumOfVaccCases = this.vaccinatedCases[this.vaccinatedCases.length-1].sumTotal;
-                console.log("Entries Vaccinated: " + this.vaccinatedCases.length)
-
                 const last7days = this.vaccinatedCases.slice(-7);
                 let sum: number = 0;
                 for(let day of last7days) {
@@ -171,22 +170,102 @@ export class AppComponent implements OnInit {
                     this.newCasesVaccRollAvg.push(null);
                 }
                 getRollingAvg(this.vaccinatedCases, this.newCasesVaccRollAvg);
-                console.log("Vaccinated Cases Last 7 Days: " + sum);
+            
 
 
 
                 this.latestVaccinated = sum;
                 this.updatePieChartOptions();
-                console.log(this.vaccinatedCases);
                 this.updateOptionsCases();
+                console.log("Cases Vacc loaded: " + this.vaccinatedCases.length)
             });
         });
 
+        // Get ICU Capacity 
+        this.http.get(this.contextUrl).subscribe(context => {
+            this.context = context;
+            this.http.get(this.context.sources.individual.json.daily.hospCapacity).subscribe((hospCap: any) => {
+
+                this.icuCap = hospCap.filter((hospCap: { geoRegion: string; }) => hospCap.geoRegion == "CH").slice(-50);
+                for (let entry of this.icuCap) {
+                    this.icuCapacity.push(entry.ICU_Capacity);
+                    this.icuCovidPatients.push(entry.ICU_Covid19Patients);
+                    this.icuNonCovidPatients.push(entry.ICU_NonCovid19Patients);
+                }
+                this.updateIcuCapOptions();
+            });
+            console.log("Hosp Capacity loaded");
+        });
+
+        this.icuOptions = {
+        title: {
+            text: 'ICU Capacity',
+            left: 'center',
+            top: 30,
+            textStyle: {
+              color: '#ccc',
+            },
+          },
+        legend: {
+            data: ['Total', 'Covid Patients', 'Non-Covid Patients'],
+            align: 'left',
+            left: '10%',
+            top: '15%',
+            orient: 'vertical',
+        },
+        tooltip: {},
+        xAxis: {
+            data: this.xAxisData,
+            silent: false,
+            splitLine: {
+                show: true,
+            },
+        },
+        yAxis: {},
+        series: [
+            {
+                name: 'Total',
+                type: 'line',
+                data: this.icuCapacity,
+                animationDelay: (idx: number) => idx * 10,
+            },
+            {
+                name: 'Covid Patients',
+                type: 'line',
+                data: this.icuCovidPatients,
+                animationDelay: (idx: number) => idx * 10,
+            },
+            {
+                name: 'Non-Covid Patients',
+                type: 'line',
+                data: this.icuNonCovidPatients,
+                animationDelay(idx: number) {
+                    return idx * 10 + 100;
+                },
+            }
+        ],
+        animationEasing: 'elasticOut',
+        animationDelayUpdate(idx: number) {
+            return idx * 5;
+        },
+    };
+
 
         this.options = {
+            title: {
+                text: 'New Covid Cases',
+                left: 'center',
+                top: 30,
+                textStyle: {
+                  color: '#ccc',
+                },
+              },
             legend: {
-                data: ['New Cases', 'New Cases Rolling Avg', 'New vaccinated Cases', 'New vaccinated Cases Rolling Avg'],
+                data: ['Total', 'Total Rolling Avg', 'Vaccinated', 'Vaccinated Rolling Avg'],
                 align: 'left',
+                left: '10%',
+                top: '15%',
+                orient: 'vertical',
             },
             tooltip: {},
             xAxis: {
@@ -199,19 +278,19 @@ export class AppComponent implements OnInit {
             yAxis: {},
             series: [
                 {
-                    name: 'New Cases',
+                    name: 'Total',
                     type: 'bar',
                     data: this.newCases,
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
-                    name: 'New Cases Rolling Avg',
+                    name: 'Total Rolling Avg',
                     type: 'line',
                     data: this.newCasesRollingAvg,
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
-                    name: 'New vaccinated Cases',
+                    name: 'Vaccinated',
                     type: 'bar',
                     data: this.newCasesVacc,
                     animationDelay(idx: number) {
@@ -219,7 +298,7 @@ export class AppComponent implements OnInit {
                     },
                 },                
                 {
-                    name: 'New vaccinated Cases Rolling Avg',
+                    name: 'Vaccinated Rolling Avg',
                     type: 'line',
                     data: this.newCasesVaccRollAvg,
                     animationDelay: (idx: number) => idx * 10,
@@ -232,9 +311,20 @@ export class AppComponent implements OnInit {
         };
 
         this.options2 = {
+            title: {
+                text: 'New Hospitalized Covid Cases',
+                left: 'center',
+                top: 30,
+                textStyle: {
+                  color: '#ccc',
+                },
+              },
             legend: {
-                data: ['New Hospitalized', 'New Hospitalized Rollling Avg', 'New vaccinated Hospitalized', 'New vaccinated Hospitalized Rolling Avg'],
-                align: 'left',
+                data: ['Total', 'Total Rollling Avg', 'Vaccinated', 'Vaccinated Rolling Avg'],
+                align: 'auto',
+                left: '10%',
+                top: '15%',
+                orient: 'vertical',
             },
             tooltip: {},
             xAxis: {
@@ -247,19 +337,19 @@ export class AppComponent implements OnInit {
             yAxis: {},
             series: [
                 {
-                    name: 'New Hospitalized',
+                    name: 'Total',
                     type: 'bar',
                     data: this.newHospitalized,
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
-                    name: 'New Hospitalized Rolling Avg',
+                    name: 'Total Rollling Avg',
                     type: 'line',
                     data: this.newCasesHospRollingAvg,
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
-                    name: 'New vaccinated Hospitalized',
+                    name: 'Vaccinated',
                     type: 'bar',
                     data: this.newHospitalizedVacc,
                     animationDelay(idx: number) {
@@ -267,7 +357,7 @@ export class AppComponent implements OnInit {
                     },
                 },
                 {
-                    name: 'New Hospitalized Vaccinated Rolling Avg',
+                    name: 'Vaccinated Rolling Avg',
                     type: 'line',
                     data: this.newCasesHospaccRollAvg,
                     animationDelay: (idx: number) => idx * 10,
@@ -303,19 +393,19 @@ export class AppComponent implements OnInit {
             },
             series: [
                 {
-                    name: 'New Cases',
+                    name: 'Total',
                     type: 'bar',
                     data: this.newCases,
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
-                    name: 'New Cases Rolling Avg',
+                    name: 'Total Rolling Avg',
                     type: 'line',
                     data: this.newCasesRollingAvg,
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
-                    name: 'New vaccinated Cases',
+                    name: 'Vaccinated',
                     type: 'bar',
                     data: this.newCasesVacc,
                     animationDelay(idx: number) {
@@ -323,21 +413,18 @@ export class AppComponent implements OnInit {
                     },
                 },                
                 {
-                    name: 'New vaccinated Cases Rolling Avg',
+                    name: 'Vaccinated Rolling Avg',
                     type: 'line',
                     data: this.newCasesVaccRollAvg,
                     animationDelay: (idx: number) => idx * 10,
                 }
             ],
         };
+
     }
 
     private updateOptionsHosp() {
         this.updateOptions2 = {
-            legend: {
-                data: ['New Hospitalized', 'New Hospitalized Rolling Avg', 'New vaccinated Hospitalized', 'New vaccinated Hospitalized Rolling Avg'],
-                align: 'left',
-            },
             tooltip: {},
             xAxis: {
                 data: this.xAxisData,
@@ -349,19 +436,19 @@ export class AppComponent implements OnInit {
             yAxis: {},
             series: [
                 {
-                    name: 'New Hospitalized',
+                    name: 'Total',
                     type: 'bar',
                     data: this.newHospitalized,
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
-                    name: 'New Hospitalized Rolling Avg',
+                    name: 'Total Rollling Avg',
                     type: 'line',
                     data: this.newCasesHospRollingAvg,
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
-                    name: 'New vaccinated Hospitalized',
+                    name: 'Vaccinated',
                     type: 'bar',
                     data: this.newHospitalizedVacc,
                     animationDelay(idx: number) {
@@ -369,11 +456,51 @@ export class AppComponent implements OnInit {
                     },
                 },
                 {
-                    name: 'New vaccinated Hospitalized Rolling Avg',
+                    name: 'Vaccinated Rolling Avg',
                     type: 'line',
                     data: this.newCasesHospaccRollAvg,
                     animationDelay: (idx: number) => idx * 10,
                 },
+            ],
+            animationEasing: 'elasticOut',
+            animationDelayUpdate(idx: number) {
+                return idx * 5;
+            },
+        };
+    }
+
+    private updateIcuCapOptions() {
+        this.updateIcuOptions = {
+            tooltip: {},
+            xAxis: {
+                data: this.xAxisData,
+                silent: false,
+                splitLine: {
+                    show: false,
+                },
+            },
+            yAxis: {},
+            series: [
+                {
+                    name: 'Total',
+                    type: 'line',
+                    data: this.icuCapacity,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'Covid Patients',
+                    type: 'line',
+                    data: this.icuCovidPatients,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'Non-Covid Patients',
+                    type: 'line',
+                    data: this.icuNonCovidPatients,
+                    animationDelay(idx: number) {
+                        return idx * 10 + 100;
+                    },
+                }
             ],
             animationEasing: 'elasticOut',
             animationDelayUpdate(idx: number) {
@@ -409,6 +536,7 @@ export class AppComponent implements OnInit {
         this.updateOptionsCases();
         this.updateOptionsHosp();
         this.updatePieChartOptions();
+        this.updateIcuCapOptions();
     }
 
 
