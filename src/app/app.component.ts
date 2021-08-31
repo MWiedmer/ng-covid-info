@@ -43,6 +43,8 @@ export class AppComponent implements OnInit {
 
     latestVaccinated: number = 0;
     latestUnvaccinated: number = 0;
+    newCasesHospRollingAvg: any[] = [];
+    newCasesHospaccRollAvg: any[] = [];
 
 
   pieOptions: any =  {
@@ -121,6 +123,10 @@ export class AppComponent implements OnInit {
                     this.newHospitalized.push(entry.entries);
                 }
                 console.log("Entries Hospitalized: " + this.hospCases.length)
+                for(var _j = 0; _j < 7; _j++) {
+                    this.newCasesHospRollingAvg.push(null);
+                }
+                getRollingAvg(this.hospCases, this.newCasesHospRollingAvg);
                 this.updateOptionsHosp();
             });
         });
@@ -134,6 +140,12 @@ export class AppComponent implements OnInit {
                     this.newHospitalizedVacc.push(entry.entries);
                 }
                 console.log("Entries Vaccinated Hospitalized: " + this.vaccinatedHosp.length)
+                for(var _j = 0; _j < 7; _j++) {
+                    this.newCasesHospaccRollAvg.push(null);
+                }
+                getRollingAvg(this.vaccinatedHosp, this.newCasesHospaccRollAvg);
+                console.log("Rolling Avg Hosp Vacc Base: " + this.newHospitalizedVacc);
+                console.log("Rolling Avg Hosp Vacc: " + this.newCasesHospaccRollAvg);
                 this.updateOptionsHosp();
             });
         });
@@ -221,7 +233,7 @@ export class AppComponent implements OnInit {
 
         this.options2 = {
             legend: {
-                data: ['New Hospitalized', 'New vaccinated Hospitalized'],
+                data: ['New Hospitalized', 'New Hospitalized Rollling Avg', 'New vaccinated Hospitalized', 'New vaccinated Hospitalized Rolling Avg'],
                 align: 'left',
             },
             tooltip: {},
@@ -241,12 +253,24 @@ export class AppComponent implements OnInit {
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
+                    name: 'New Hospitalized Rolling Avg',
+                    type: 'line',
+                    data: this.newCasesHospRollingAvg,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
                     name: 'New vaccinated Hospitalized',
                     type: 'bar',
                     data: this.newHospitalizedVacc,
                     animationDelay(idx: number) {
                         return idx * 10 + 100;
                     },
+                },
+                {
+                    name: 'New Hospitalized Vaccinated Rolling Avg',
+                    type: 'line',
+                    data: this.newCasesHospaccRollAvg,
+                    animationDelay: (idx: number) => idx * 10,
                 },
             ],
             animationEasing: 'elasticOut',
@@ -310,6 +334,11 @@ export class AppComponent implements OnInit {
 
     private updateOptionsHosp() {
         this.updateOptions2 = {
+            legend: {
+                data: ['New Hospitalized', 'New Hospitalized Rolling Avg', 'New vaccinated Hospitalized', 'New vaccinated Hospitalized Rolling Avg'],
+                align: 'left',
+            },
+            tooltip: {},
             xAxis: {
                 data: this.xAxisData,
                 silent: false,
@@ -326,12 +355,24 @@ export class AppComponent implements OnInit {
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
+                    name: 'New Hospitalized Rolling Avg',
+                    type: 'line',
+                    data: this.newCasesHospRollingAvg,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
                     name: 'New vaccinated Hospitalized',
                     type: 'bar',
                     data: this.newHospitalizedVacc,
                     animationDelay(idx: number) {
                         return idx * 10 + 100;
                     },
+                },
+                {
+                    name: 'New vaccinated Hospitalized Rolling Avg',
+                    type: 'line',
+                    data: this.newCasesHospaccRollAvg,
+                    animationDelay: (idx: number) => idx * 10,
                 },
             ],
             animationEasing: 'elasticOut',
@@ -381,20 +422,16 @@ export class AppComponent implements OnInit {
 }
 
 function getRollingAvg(cases: any[], avgRolling: number[]) {
-    console.log("Cases to Analyzs: "  + cases);
     let rolling:number[] = [];
     let startIndex = 0;
     while(startIndex + 8  < cases.length) {
-        //console.log("Index Begin: " +startIndex);
         let avgDatapoint = 0;
         for (var _i = startIndex; _i <startIndex + 7; _i++) {
-            //console.log("Inde<: " + startIndex +", Case " + _i + " to Analyzs: "  + cases[_i]);
               avgDatapoint += cases[_i].entries;
         }
         rolling[startIndex] = Math.floor(avgDatapoint / 7);
         avgRolling.push( Math.floor(avgDatapoint / 7));
         startIndex += 1;
-        //console.log("Next Index: " +startIndex);
     }
     return rolling;
 }
