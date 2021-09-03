@@ -4,6 +4,7 @@ import {HttpClient} from "@angular/common/http";
 import {Cases} from "./model/Cases";
 import {CasesVacc} from "./model/CasesVacc";
 import {IcuCap} from "./model/IcuCap";
+import {CasesList} from "./model/CasesList";
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
@@ -30,10 +31,11 @@ export class AppComponent implements OnInit {
     updatePieOptions: any;
     updateIcuOptions: any
 
-    cases: Cases[] = [];
+    //cases: Cases[] = [];
+    casesList: CasesList = new CasesList();
+    //vacCasesList: CasesList = new CasesList();
 
     hospCases: Cases[] = [];
-    vaccinatedCases: CasesVacc[] = [];
     vaccinatedHosp: CasesVacc[] = [];
 
     icuCap: IcuCap[] = [];
@@ -42,15 +44,9 @@ export class AppComponent implements OnInit {
     icuNonCovidPatients: any[] = [];
 
     xAxisData: any[] = [];
-    newCases: any[] = [];
-    newCasesRollingAvg: any[] = [];
-    newCasesVaccRollAvg: any[] = [];
-    newCasesVacc: any[] = [];
     newHospitalized: any[] = [];
     newHospitalizedVacc: any[] = [];
 
-    latestVaccinated: number = 0;
-    latestUnvaccinated: number = 0;
     newCasesHospRollingAvg: any[] = [];
     newCasesHospaccRollAvg: any[] = [];
 
@@ -70,8 +66,8 @@ export class AppComponent implements OnInit {
             type: 'pie',
             radius: '50%',
             data: [
-                {value: this.latestVaccinated, name: 'Vaccinated'},
-                {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Unvaccinated'}
+                {value: this.casesList.getTotal(true, 7), name: 'Vaccinated'},
+                {value: this.casesList.getTotal(false, 7) - this.casesList.getTotal(true, 7), name: 'Unvaccinated'}
             ],
             emphasis: {
                 itemStyle: {
@@ -86,34 +82,19 @@ export class AppComponent implements OnInit {
 
     ngOnInit(): void {
 
-        let sumofUnvaccCases = 0;
         let sumOfVaccCases = 0;
         // Cases total
         this.http.get(this.contextUrl).subscribe(context => {
             this.context = context;
             this.http.get(this.context.sources.individual.json.daily.cases).subscribe((cases: any) => {
-                this.cases = cases.filter((cases: { geoRegion: string; }) => cases.geoRegion == "CH").slice(-this.daysToShow);
-                for (let entry of this.cases) {
-                    this.xAxisData.push(entry.datum);
-                    this.newCases.push(entry.entries);
-                }
-                sumofUnvaccCases = this.cases[this.cases.length-1].sumTotal;
-               
-                for(var _j = 0; _j < 7; _j++) {
-                    this.newCasesRollingAvg.push(null);
-                }
-                getRollingAvg(this.cases, this.newCasesRollingAvg);
-                const last7days = this.cases.slice(-7);
-                let sum: number = 0;
-                for(let day of last7days) {
-                    sum = sum + day.entries;
-                }
-                this.latestUnvaccinated = sum;
-
+                this.casesList.setUnvacCases(cases)
+                this.casesList.filterRegion("CH");
+                this.casesList.slice(false, this.daysToShow);
+                this.casesList.getCasesArray(false, true);
 
                 this.updatePieChartOptions();
                 this.updateOptionsCases();
-                console.log("Cases loaded: " + this.cases.length)
+                console.log("Cases loaded: " + this.casesList.unvacCases.length)
 
             });
         });
@@ -138,7 +119,7 @@ export class AppComponent implements OnInit {
         // Get Vaccinated Hospitalized
         this.http.get(this.contextUrl).subscribe(context => {
             this.context = context;
-            this.http.get(this.context.sources.individual.json.daily.hospVaccPersons).subscribe((vaccinatedHosp: any) => {
+            this.http.get(this.context.sources.individual.json.daily.hospVaccPersons).subscribe((vaccinatedHosp: any) => {   
                 this.vaccinatedHosp = vaccinatedHosp.slice(-this.daysToShow);
                 for (let entry of this.vaccinatedHosp) {
                     this.newHospitalizedVacc.push(entry.entries);
@@ -157,28 +138,12 @@ export class AppComponent implements OnInit {
         this.http.get(this.contextUrl).subscribe(context => {
             this.context = context;
             this.http.get(this.context.sources.individual.json.daily.casesVaccPersons).subscribe((vaccinatedCases: any) => {
-                this.vaccinatedCases = vaccinatedCases.slice(-this.daysToShow);
-                for (let entry of this.vaccinatedCases) {
-                    this.newCasesVacc.push(entry.entries);
-                }
-                sumOfVaccCases = this.vaccinatedCases[this.vaccinatedCases.length-1].sumTotal;
-                const last7days = this.vaccinatedCases.slice(-7);
-                let sum: number = 0;
-                for(let day of last7days) {
-                    sum = sum + day.entries;
-                }
-                for(var _j = 0; _j < 7; _j++) {
-                    this.newCasesVaccRollAvg.push(null);
-                }
-                getRollingAvg(this.vaccinatedCases, this.newCasesVaccRollAvg);
-            
-
-
-
-                this.latestVaccinated = sum;
+                this.casesList.setVacCases(vaccinatedCases)
+                this.casesList.slice(true, this.daysToShow);
+                this.casesList.getCasesArray(true, true);
                 this.updatePieChartOptions();
                 this.updateOptionsCases();
-                console.log("Cases Vacc loaded: " + this.vaccinatedCases.length)
+                console.log("Cases Vacc loaded: " + this.casesList.vacCases.length)
             });
         });
 
@@ -281,19 +246,19 @@ export class AppComponent implements OnInit {
                 {
                     name: 'Total',
                     type: 'bar',
-                    data: this.newCases,
+                    data: this.casesList.getCasesArray(false, false),
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
                     name: 'Total Rolling Avg',
                     type: 'line',
-                    data: this.newCasesRollingAvg,
+                    data: this.casesList.getRollingAvg(false),
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
                     name: 'Vaccinated',
                     type: 'bar',
-                    data: this.newCasesVacc,
+                    data: this.casesList.getCasesArray(true, false),
                     animationDelay(idx: number) {
                         return idx * 10 + 100;
                     },
@@ -301,7 +266,7 @@ export class AppComponent implements OnInit {
                 {
                     name: 'Vaccinated Rolling Avg',
                     type: 'line',
-                    data: this.newCasesVaccRollAvg,
+                    data: this.casesList.getRollingAvg(true),
                     animationDelay: (idx: number) => idx * 10,
                 }
             ],
@@ -396,19 +361,19 @@ export class AppComponent implements OnInit {
                 {
                     name: 'Total',
                     type: 'bar',
-                    data: this.newCases,
+                    data: this.casesList.getCasesArray(false, false),
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
                     name: 'Total Rolling Avg',
                     type: 'line',
-                    data: this.newCasesRollingAvg,
+                    data: this.casesList.getRollingAvg(false),
                     animationDelay: (idx: number) => idx * 10,
                 },
                 {
                     name: 'Vaccinated',
                     type: 'bar',
-                    data: this.newCasesVacc,
+                    data: this.casesList.getCasesArray(true, false),
                     animationDelay(idx: number) {
                         return idx * 10 + 100;
                     },
@@ -416,7 +381,7 @@ export class AppComponent implements OnInit {
                 {
                     name: 'Vaccinated Rolling Avg',
                     type: 'line',
-                    data: this.newCasesVaccRollAvg,
+                    data: this.casesList.getRollingAvg(true),
                     animationDelay: (idx: number) => idx * 10,
                 }
             ],
@@ -518,8 +483,8 @@ export class AppComponent implements OnInit {
                     type: 'pie',
                     radius: '50%',
                     data: [
-                        {value: this.latestVaccinated, name: 'Vaccinated'},
-                        {value: this.latestUnvaccinated - this.latestVaccinated, name: 'Unvaccinated'}
+                        {value: this.casesList.getTotal(true, 7), name: 'Vaccinated'},
+                        {value: this.casesList.getTotal(false, 7) - this.casesList.getTotal(true, 7), name: 'Unvaccinated'}
                     ],
                     emphasis: {
                         itemStyle: {
