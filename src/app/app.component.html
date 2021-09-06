@@ -8,6 +8,7 @@
       <span *ngIf=doDisplay>
       <div echarts [options]="options"  [merge]="updateOptions"  theme="dark" class="chart"></div>
       <div echarts theme="dark" [merge]="updateOptions2" [options]="options2" class="chart"></div>
+      <div echarts [options]="hospCapaOptions"  [merge]="updateHospCapaOptions" theme="dark" class="chart"></div>
       <div echarts [options]="icuOptions"  [merge]="updateIcuOptions" theme="dark" class="chart"></div>
       <div echarts [options]="pieOptions"  [merge]="updatePieOptions" theme="dark" class="chart"></div>
     </span>

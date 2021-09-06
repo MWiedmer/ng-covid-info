@@ -5,6 +5,7 @@ import {Cases} from "./model/Cases";
 import {CasesVacc} from "./model/CasesVacc";
 import {IcuCap} from "./model/IcuCap";
 import {CasesList} from "./model/CasesList";
+import { HospCapacityList } from './model/HospCapacityList';
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
@@ -24,15 +25,18 @@ export class AppComponent implements OnInit {
     options: any;
     options2: any;
     icuOptions: any;
+    hospCapaOptions: any;
 
     optioinsPie: any;
     updateOptions: any;
     updateOptions2: any;
     updatePieOptions: any;
-    updateIcuOptions: any
+    updateIcuOptions: any;
+    updateHospCapaOptions: any;
 
     //cases: Cases[] = [];
     casesList: CasesList = new CasesList();
+    hospCapaList: HospCapacityList = new HospCapacityList();
     //vacCasesList: CasesList = new CasesList();
 
     hospCases: Cases[] = [];
@@ -91,6 +95,7 @@ export class AppComponent implements OnInit {
                 this.casesList.filterRegion("CH");
                 this.casesList.slice(false, this.daysToShow);
                 this.casesList.getCasesArray(false, true);
+                this.casesList.setXAxis();
 
                 this.updatePieChartOptions();
                 this.updateOptionsCases();
@@ -153,6 +158,11 @@ export class AppComponent implements OnInit {
             this.http.get(this.context.sources.individual.json.daily.hospCapacity).subscribe((hospCap: any) => {
 
                 this.icuCap = hospCap.filter((hospCap: { geoRegion: string; }) => hospCap.geoRegion == "CH").slice(-this.daysToShow);
+                this.hospCapaList.setHospCapaEntries(this.icuCap);
+                this.hospCapaList.setRelativeChangeTotal();
+                this.hospCapaList.setRelativeChangeCovid();
+                this.hospCapaList.setRelativeChangeICUTotal();
+                this.hospCapaList.setRelativeChangeICUCovid();
                 for (let entry of this.icuCap) {
                     this.icuCapacity.push(entry.ICU_Capacity);
                     this.icuCovidPatients.push(entry.ICU_Covid19Patients);
@@ -162,6 +172,8 @@ export class AppComponent implements OnInit {
             });
             console.log("Hosp Capacity loaded");
         });
+
+        this.casesList.setOptions();
 
         this.icuOptions = {
         title: {
@@ -181,7 +193,7 @@ export class AppComponent implements OnInit {
         },
         tooltip: {},
         xAxis: {
-            data: this.xAxisData,
+            data: this.casesList.xAxisData,
             silent: false,
             splitLine: {
                 show: true,
@@ -214,6 +226,8 @@ export class AppComponent implements OnInit {
         animationDelayUpdate(idx: number) {
             return idx * 5;
         },
+
+        
     };
 
 
@@ -235,7 +249,7 @@ export class AppComponent implements OnInit {
             },
             tooltip: {},
             xAxis: {
-                data: this.xAxisData,
+                data: this.casesList.xAxisData,
                 silent: false,
                 splitLine: {
                     show: true,
@@ -294,7 +308,7 @@ export class AppComponent implements OnInit {
             },
             tooltip: {},
             xAxis: {
-                data: this.xAxisData,
+                data: this.casesList.xAxisData,
                 silent: false,
                 splitLine: {
                     show: false,
@@ -335,6 +349,63 @@ export class AppComponent implements OnInit {
             },
         };
 
+        this.hospCapaOptions = {
+            title: {
+                text: 'Hospital Capacity Capacity Relative Change',
+                left: 'center',
+                top: 30,
+                textStyle: {
+                  color: '#ccc',
+                },
+              },
+            legend: {
+                data: ['Total', 'Covid 19', 'Total ICU', 'Covid ICU'],
+                align: 'left',
+                left: '10%',
+                top: '15%',
+                orient: 'vertical',
+            },
+            tooltip: {},
+            xAxis: {
+                data: this.casesList.xAxisData,
+                silent: false,
+                splitLine: {
+                    show: true,
+                },
+            },
+            yAxis: {},
+            series: [
+                {
+                    name: 'Total',
+                    type: 'bar',
+                    data: this.hospCapaList.relativeChangesTotal,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'Covid 19',
+                    type: 'bar',
+                    data: this.hospCapaList.relativeChangesCovid,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'Total ICU',
+                    type: 'bar',
+                    data: this.hospCapaList.relativeChangesICUTotal,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'Covid ICU',
+                    type: 'bar',
+                    data: this.hospCapaList.relativeChangesICUCovid,
+                    animationDelay: (idx: number) => idx * 10,
+                }
+            ],
+            animationEasing: 'elasticOut',
+            animationDelayUpdate(idx: number) {
+                return idx * 5;
+            },
+        };
+
 
     
 
@@ -348,10 +419,70 @@ export class AppComponent implements OnInit {
         this.updateAllOptions();
     }
 
+    private updateOptionsHospCapa() {
+        console.log(this.casesList.xAxisData);
+        this.updateHospCapaOptions = {
+            title: {
+                text: 'Hospital Capacity Capacity Relative Change',
+                left: 'center',
+                top: 30,
+                textStyle: {
+                  color: '#ccc',
+                },
+              },
+            legend: {
+                data: ['Total', 'Covid 19', 'Total ICU', 'Covid ICU'],
+                align: 'left',
+                left: '10%',
+                top: '15%',
+                orient: 'vertical',
+            },
+            tooltip: {},
+            xAxis: {
+                data: this.casesList.xAxisData,
+                silent: false,
+                splitLine: {
+                    show: true,
+                },
+            },
+            yAxis: {},
+            series: [
+                {
+                    name: 'Total',
+                    type: 'bar',
+                    data: this.hospCapaList.relativeChangesTotal,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'Covid 19',
+                    type: 'bar',
+                    data: this.hospCapaList.relativeChangesCovid,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'Total ICU',
+                    type: 'bar',
+                    data: this.hospCapaList.relativeChangesICUTotal,
+                    animationDelay: (idx: number) => idx * 10,
+                },
+                {
+                    name: 'Covid ICU',
+                    type: 'bar',
+                    data: this.hospCapaList.relativeChangesICUCovid,
+                    animationDelay: (idx: number) => idx * 10,
+                }
+            ],
+            animationEasing: 'elasticOut',
+            animationDelayUpdate(idx: number) {
+                return idx * 5;
+            },
+        };
+    }
+
     private updateOptionsCases() {
         this.updateOptions = {
             xAxis: {
-                data: this.xAxisData,
+                data: this.casesList.xAxisData,
                 silent: false,
                 splitLine: {
                     show: false,
@@ -393,7 +524,7 @@ export class AppComponent implements OnInit {
         this.updateOptions2 = {
             tooltip: {},
             xAxis: {
-                data: this.xAxisData,
+                data: this.casesList.xAxisData,
                 silent: false,
                 splitLine: {
                     show: false,
@@ -439,7 +570,7 @@ export class AppComponent implements OnInit {
         this.updateIcuOptions = {
             tooltip: {},
             xAxis: {
-                data: this.xAxisData,
+                data: this.casesList.xAxisData,
                 silent: false,
                 splitLine: {
                     show: false,
@@ -503,6 +634,7 @@ export class AppComponent implements OnInit {
         this.updateOptionsHosp();
         this.updatePieChartOptions();
         this.updateIcuCapOptions();
+        this.updateOptionsHospCapa();
     }
 
 

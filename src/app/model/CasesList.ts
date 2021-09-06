@@ -1,5 +1,4 @@
 
-import { IvyParser } from "@angular/compiler";
 import { Cases } from "./Cases";
 
 export class CasesList {
@@ -7,7 +6,11 @@ export class CasesList {
     vacCases: Cases[] = [];
     private unvacCasesArray:number[] = [];
     private vacCasesArray:number[] = [];
-    private xAxisData:any[] = [];
+    public xAxisData:any[] = [];
+
+    options: any;
+    
+
 
 
     setUnvacCases(someCases: Cases[]) {
@@ -16,6 +19,12 @@ export class CasesList {
 
     setVacCases(someCases: Cases[]) {
       this.vacCases = someCases;
+    }
+
+    setXAxis() {
+      for (let someCase of this.unvacCases) {
+        this.xAxisData.push(someCase.datum);
+      }
     }
 
 
@@ -35,12 +44,11 @@ export class CasesList {
       if(refresh) {
         if(vac) {
           for (let someCase of this.vacCases) {
-            this.xAxisData.push(someCase.datum);
               this.vacCasesArray.push(someCase.entries);
           }
+
         } else {
           for (let someCase of this.unvacCases) {
-            this.xAxisData.push(someCase.datum);
               this.unvacCasesArray.push(someCase.entries);
           }
         }
@@ -80,5 +88,70 @@ export class CasesList {
       }
       return newCasesRollingAvg;
   }
+
+
+  setOptions() {
+    this.options = {
+      title: {
+          text: 'New Covid Cases',
+          left: 'center',
+          top: 30,
+          textStyle: {
+            color: '#ccc',
+          },
+        },
+      legend: {
+          data: ['Total', 'Total Rolling Avg', 'Vaccinated', 'Vaccinated Rolling Avg'],
+          align: 'left',
+          left: '10%',
+          top: '15%',
+          orient: 'vertical',
+      },
+      tooltip: {},
+      xAxis: {
+          data: this.xAxisData,
+          silent: false,
+          splitLine: {
+              show: true,
+          },
+      },
+      yAxis: {},
+      series: [
+          {
+              name: 'Total',
+              type: 'bar',
+              data: this.getCasesArray(false, false),
+              animationDelay: (idx: number) => idx * 10,
+          },
+          {
+              name: 'Total Rolling Avg',
+              type: 'line',
+              data: this.getRollingAvg(false),
+              animationDelay: (idx: number) => idx * 10,
+          },
+          {
+              name: 'Vaccinated',
+              type: 'bar',
+              data: this.getCasesArray(true, false),
+              animationDelay(idx: number) {
+                  return idx * 10 + 100;
+              },
+          },                
+          {
+              name: 'Vaccinated Rolling Avg',
+              type: 'line',
+              data: this.getRollingAvg(true),
+              animationDelay: (idx: number) => idx * 10,
+          }
+      ],
+      animationEasing: 'elasticOut',
+      animationDelayUpdate(idx: number) {
+          return idx * 5;
+      },
+  };
+
+  }
+
+  
 
 }
